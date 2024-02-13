@@ -4,13 +4,30 @@ const c = canvas.getContext('2d')
 canvas.width = innerWidth
 canvas.height = innerHeight
 
+class Edge {
+    constructor(p1, p2) {
+        this.p1 = p1
+        this.p2 = p2
+    }
+    draw(){
+        c.beginPath()
+        c.moveTo(this.p1.image.x, this.p1.image.y)
+        c.lineTo(this.p2.image.x, this.p2.image.y)
+        c.strokeStyle = '#00ff00'
+        c.lineWidth = 5
+        c.stroke()
+    }
+}
+
+
 class Point {
     constructor(x, y, z) {
         this.x = x
         this.y = y
         this.z = z
-        this.sx = 50
-        this.sy = 50
+        this.sx = 0
+        this.sy = 0
+        this.image = {x: 50, y: 50}
         this.velocity = 0
         this.radius = 2
     }
@@ -19,20 +36,11 @@ class Point {
         return a1 * a5 * a9 + a3 * a4 * a8 + a2 * a6 * a7 - a3 * a5 * a7 - a1 * a6 * a8 - a2 * a4 * a9
     }
 
-    display() {                 //(spectator.vpx - this.x)    (spectator.vpy - this.y)      (spectator.vpz - this.z)
-        /*let det = (spectator.x - this.x) * (spectator.vecupy * spectator.vecriz - spectator.vecriy * spectator.vecupz)
-         + spectator.vecupx * (-1 * (spectator.y - this.y) * spectator.vecriz + spectator.vecriy * (spectator.z - this.z))
-          - spectator.vecrix * (-1 * (spectator.y - this.y) * spectator.vecupz + spectator.vecupy * (spectator.z - this.z))
-        let det2 = (spectator.x - this.x) * (-1 * (spectator.vpy - this.y) * spectator.vecriz + spectator.vecriy * (spectator.vpz - this.z))
-        - (spectator.vpx - this.x) * (-1 * (spectator.y - this.y) * spectator.vecriz + spectator.vecriy * (spectator.z - this.z))
-         - spectator.vecrix * ((spectator.y - this.y) * (spectator.vpz - this.z) - (spectator.vpy - this.y) * (spectator.z - this.z))
-         let det3 = (spectator.x - this.x) * (-1 * spectator.vecupy * (spectator.vpz - this.z) + (spectator.vpy - this.y) * spectator.vecupz)
-         + spectator.vecupx * ((spectator.y - this.y) * (spectator.vpz - this.z) - (spectator.vpy - this.y) * (spectator.z - this.z))
-          + (spectator.vpx - this.x) * (-1 * (spectator.y - this.y) * spectator.vecupz + spectator.vecupy * (spectator.z - this.z))*/
-        let det = this.determinant(spectator.x - this.x, -spectator.vecupx, -spectator.vecrix, spectator.y - this.y, -spectator.vecupy, -spectator.vecriy, spectator.z - this.z, -spectator.vecupz, -spectator.vecriz)
-        let det1 = this.determinant(spectator.vpx - this.x, -spectator.vecupx, -spectator.vecrix, spectator.vpy - this.y, -spectator.vecupy, -spectator.vecriy, spectator.vpz - this.z, -spectator.vecupz, -spectator.vecriz)
-        let det2 = this.determinant(spectator.x - this.x, spectator.vpx - this.x, -spectator.vecrix, spectator.y - this.y, spectator.vpy - this.y, -spectator.vecriy, spectator.z - this.z, spectator.vpz - this.z, -spectator.vecriz)
-        let det3 = this.determinant(spectator.x - this.x, -spectator.vecupx, spectator.vpx - this.x, spectator.y - this.y, -spectator.vecupy, spectator.vpy - this.y, spectator.z - this.z, -spectator.vecupz, spectator.vpz - this.z)
+    display() {
+        let det = this.determinant(spectator.x - this.x, -spectator.vecup.x, -spectator.vecri.x, spectator.y - this.y, -spectator.vecup.y, -spectator.vecri.y, spectator.z - this.z, -spectator.vecup.z, -spectator.vecri.z)
+        let det1 = this.determinant(spectator.corvp.x - this.x, -spectator.vecup.x, -spectator.vecri.x, spectator.corvp.y - this.y, -spectator.vecup.y, -spectator.vecri.y, spectator.corvp.z - this.z, -spectator.vecup.z, -spectator.vecri.z)
+        let det2 = this.determinant(spectator.x - this.x, spectator.corvp.x - this.x, -spectator.vecri.x, spectator.y - this.y, spectator.corvp.y - this.y, -spectator.vecri.y, spectator.z - this.z, spectator.corvp.z - this.z, -spectator.vecri.z)
+        let det3 = this.determinant(spectator.x - this.x, -spectator.vecup.x, spectator.corvp.x - this.x, spectator.y - this.y, -spectator.vecup.y, spectator.corvp.y - this.y, spectator.z - this.z, -spectator.vecup.z, spectator.corvp.z - this.z)
         this.sx = det3 / det
         this.sy = det2 / det
         return det1 / det
@@ -41,10 +49,11 @@ class Point {
 
     draw() {
         if(this.display() >= 1){return}
-        const norm = 100;
-        //console.log(this.sx, this.sy)
+        const norm = 100
+        this.image.x = norm * this.sx + canvas.width / 2
+        this.image.y = -norm * this.sy + canvas.height / 2
         c.beginPath()
-        c.arc(norm * this.sx + canvas.width / 2, -1 * norm * this.sy + canvas.height / 2, this.radius, 0, Math.PI * 2)
+        c.arc(this.image.x, this.image.y, this.radius, 0, Math.PI * 2)
         c.fillStyle = 'yellow'
         c.fill()
         c.closePath()
@@ -62,30 +71,26 @@ class Spectator {
         this.beta = 0
         this.rfov = 2
         this.vecvp = {x: this.rfov, y: 0, z: 0}
-        this.vpx = this.rfov + this.x
-        this.vpy = 0
-        this.vpz = 0
-        this.vecupx = 0
-        this.vecupy = 1
-        this.vecupz = 0
-        this.vecrix = 0
-        this.vecriy = 0
-        this.vecriz = 1
+        this.corvp = {x: this.x + this.rfov, y: 0, z: 0}
+        this.vecup = {x: 0, y: 1, z: 0}
+        this.vecri = {x: 0, y: 0, z: 1}
     }
     calculatevp() {
         this.vecvp.y = Math.sin(this.alpha) * this.rfov
         this.vecvp.x = Math.cos(this.beta) * Math.cos(this.alpha) * this.rfov
         this.vecvp.z = Math.sin(this.beta) * Math.cos(this.alpha) * this.rfov
-        this.vecupy = ((this.vecvp.x ** 2 + this.vecvp.z ** 2) ** 0.5) / this.rfov
-        this.vecupx =  -1 * this.vecvp.x * this.vecvp.y / (((this.vecvp.x ** 2 + this.vecvp.z ** 2) * (this.vecvp.x ** 2 + this.vecvp.y ** 2 + this.vecvp.z ** 2)) ** 0.5)
-        this.vecupz = this.vecvp.z * this.vecvp.y / (((this.vecvp.x ** 2 + this.vecvp.z ** 2) * (this.vecvp.x ** 2 + this.vecvp.y ** 2 + this.vecvp.z ** 2)) ** 0.5)
-        this.vpx = this.x + this.vecvp.x
-        this.vpy = this.y + this.vecvp.y
-        this.vpz = this.z + this.vecvp.z
+        this.vecup.y = Math.cos(this.alpha)
+        this.vecup.x = -Math.cos(this.beta) * Math.sin(this.alpha)
+        this.vecup.z = -Math.sin(this.beta) * Math.sin(this.alpha)
+        this.vecri.x = -Math.sin(this.beta)
+        this.vecri.z = Math.cos(this.beta)
+        this.corvp.x = this.x + this.vecvp.x
+        this.corvp.y = this.y + this.vecvp.y
+        this.corvp.z = this.z + this.vecvp.z
     }
     update() {
-        this.x += this.velocity.x
-        this.z += this.velocity.z
+        this.x += this.velocity.x * Math.cos(this.beta) - this.velocity.z * Math.sin(this.beta)
+        this.z += this.velocity.x * Math.sin(this.beta) + this.velocity.z * Math.cos(this.beta)
         this.y += this.velocity.y
         if(this.alpha <= Math.PI / 2 && this.alpha >= - Math.PI / 2){
             this.alpha += this.angleVelocity.alpha
@@ -99,15 +104,26 @@ class Spectator {
     }
 }
 
-let point = new Point(0, -1, -1)
-let point2 = new Point(0, 1, -1)
-let point3 = new Point(0, -1, 1)
-let point4 = new Point(0, 1, 1)
+let point = new Point(-1, -1, -1)
+let point2 = new Point(-1, 1, -1)
+let point3 = new Point(-1, -1, 1)
+let point4 = new Point(-1, 1, 1)
 let point5 = new Point(1, -1, -1)
 let point6 = new Point(1, 1, -1)
 let point7 = new Point(1, -1, 1)
 let point8 = new Point(1, 1, 1)
 const spectator = new Spectator(-3, 0, 0)
+const edge = new Edge(point, point2)
+const edge2 = new Edge(point, point3)
+const edge3 = new Edge(point, point4)
+const edge4 = new Edge(point, point5)
+const edge5 = new Edge(point, point6)
+const edge6 = new Edge(point, point7)
+const edge7 = new Edge(point, point8)
+const edge8 = new Edge(point2, point3)
+const edge9 = new Edge(point2, point4)
+
+
 
 function animate() {
     requestAnimationFrame(animate)
@@ -121,7 +137,15 @@ function animate() {
     point6.draw()
     point7.draw()
     point8.draw()
-    console.log(spectator.alpha)
+    edge.draw()
+    edge2.draw()
+    edge3.draw()
+    edge4.draw()
+    edge5.draw()
+    edge6.draw()
+    edge7.draw()
+    edge8.draw()
+    edge9.draw()
 }
 animate()
 
@@ -149,7 +173,7 @@ addEventListener('keydown', ({key}) => {
             spectator.velocity.y = 0.1
             break
         case 'l':
-            spectator.angleVelocity.beta = 0.1
+            spectator.angleVelocity.beta = 0.02
             break
         case 'i':
             if(spectator.alpha < Math.PI / 2){
@@ -162,7 +186,7 @@ addEventListener('keydown', ({key}) => {
             }
             break
         case 'j':
-            spectator.angleVelocity.beta = -0.1
+            spectator.angleVelocity.beta = -0.02
             break
     }
 })
