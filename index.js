@@ -24,18 +24,18 @@ function computeIntersection(straight_shift, straight_basis, surface_shift, surf
         straight_basis.y, -surface_basis1.y, -surface_basis2.y,
          straight_basis.z, -surface_basis1.z, -surface_basis2.z)
     let det1 = determinant(surface_shift.x - straight_shift.x, -surface_basis1.x, -surface_basis2.x, surface_shift.y - straight_shift.y, -surface_basis1.y, -surface_basis2.y, surface_shift.z - straight_shift.z, -surface_basis1.z, -surface_basis2.z)
-    //if(det1 / det >= 1 || det1 / det <= 0){return true}
     let det2 = determinant(straight_basis.x, surface_shift.x - straight_shift.x, -surface_basis2.x, straight_basis.y, surface_shift.y - straight_shift.y, -surface_basis2.y, straight_basis.z, surface_shift.z - straight_shift.z, -surface_basis2.z)
     let det3 = determinant(straight_basis.x, -surface_basis1.x, surface_shift.x - straight_shift.x, straight_basis.y, -surface_basis1.y, surface_shift.y - straight_shift.y, straight_basis.z, -surface_basis1.z, surface_shift.z - straight_shift.z)
     return [det1 / det, det2 / det, det3 / det]
 }
 
 class Object {
-    constructor(position, pointcords, facebends){
+    constructor(position, pointcords, facebends, metrics){
         this.position = position
         this.type = 'static'
         this.points = []
         this.faces = []
+        this.metrics = metrics
         pointcords.forEach(pc => {
             let np = new Point(pc.x + this.position.x, pc.y + this.position.y, pc.z + this.position.z)
             this.points.push(np)
@@ -46,7 +46,7 @@ class Object {
             fb.forEach(fc => {
                 nm.push(this.points[fc])
             })
-            let nf = new Face(nm)
+            let nf = new Face(nm, this.metrics)
             this.faces.push(nf)
             faces.push(nf)
         })
@@ -54,25 +54,45 @@ class Object {
 }
 
 class Face {
-    constructor(points){
+    constructor(points, metrics){
         this.points = points
         this.baricenter = {x: 0, y: 0, z: 0}
         this.order = this.points.length
+        this.metrics = metrics
         this.distance = 0
     }
     update(){
-        this.baricenter = {x: 0, y: 0, z: 0}
-        this.points.forEach(p => {
-            this.baricenter.x += p.x
-            this.baricenter.y += p.y
-            this.baricenter.z += p.z
-        })
+        switch(this.metrics){
+            case 'baricentric':
+                this.baricenter = {x: 0, y: 0, z: 0}
+                this.points.forEach(p => {
+                    this.baricenter.x += p.x
+                    this.baricenter.y += p.y
+                    this.baricenter.z += p.z
+                })
 
-        this.baricenter.x /= this.order
-        this.baricenter.y /= this.order
-        this.baricenter.z /= this.order
-        this.distance = (this.baricenter.x - spectator.x)**2 + (this.baricenter.y - spectator.y)**2 + (this.baricenter.z - spectator.z)**2
-
+                this.baricenter.x /= this.order
+                this.baricenter.y /= this.order
+                this.baricenter.z /= this.order
+                this.distance = (this.baricenter.x - spectator.x)**2 + (this.baricenter.y - spectator.y)**2 + (this.baricenter.z - spectator.z)**2
+                break
+            case 'minpoint':
+                this.distance = 0
+                this.points.forEach(p => {
+                    if(this.distance > p.distance){
+                        this.distance = p.distance
+                    }
+                })
+                break
+            case 'maxpoint':
+                this.distance = 0
+                this.points.forEach(p => {
+                    if(this.distance < p.distance){
+                        this.distance = p.distance
+                    }
+                })
+                break
+        }
         this.draw()
     }
 
@@ -106,12 +126,6 @@ class Face {
             }
             i++;
         }
-        /*this.points.forEach(element => {
-            if(element.status == 'visible'){
-            c.lineTo(element.image.x, element.image.y)
-            c.strokeStyle = 'green'
-            c.lineWidth = 2}
-        });*/
         c.closePath()
         c.fillStyle = 'black'
         c.fill()
@@ -148,8 +162,8 @@ class Point {
         this.velocity = 0
         this.radius = 2
         this.status = 'visible'
+        this.distance = 0
     }
-
 
 
     display() {
@@ -165,6 +179,7 @@ class Point {
 
 
     update() {
+        this.distance = (spectator.x - this.x) ** 2 + (spectator.y - this.y) ** 2 + (spectator.z - this.z) ** 2
         let a = computeIntersection({x: this.x, y: this.y, z: this.z}, {x: spectator.x - this.x, y: spectator.y - this.y, z: spectator.z - this.z},
             spectator.corvp, spectator.vecup, spectator.vecri)
         if(a[0] < 0 || a[0] > 1){this.status = 'invisible'}
@@ -195,7 +210,7 @@ class Spectator {
         this.angleVelocity = {alpha: 0, beta: 0}
         this.alpha = 0
         this.beta = 0
-        this.rfov = 1
+        this.rfov = 2
         this.vecvp = {x: this.rfov, y: 0, z: 0}
         this.corvp = {x: this.x + this.rfov, y: 0, z: 0}
         this.vecup = {x: 0, y: 1, z: 0}
@@ -252,32 +267,45 @@ const object = new Object(position = {x: 0, y: 0, z: 0}, [
     [2, 3, 7, 6],
     [4, 5, 7, 6],
     [0, 2, 6, 4]
-])
+], 'minpoint')
 
-/*const object1 = new Object(position = {x: 0, y: 0, z: 20}, [
-    {x: -1, y: 0, z: -1},
-    {x: -1, y: -1, z: -1},
-    {x: 1, y: 0, z: -1},
+const gridcnt = 30
+const widt = 30
+let gridp = []
+for(let i = 0; i < gridcnt; i++){
+    for(let j = 0; j < gridcnt; j++){
+        gridp.push({x: i * widt, y: 0, z: j * widt})
+    }
+}
+let gridf = []
+for(let i = 0; i < gridcnt - 1; i++){
+    for(let j = 0; j < gridcnt - 1; j++){
+        gridf.push([i * gridcnt + j, (i + 1) * gridcnt + j, (i + 1) * gridcnt + j + 1, i * gridcnt + j + 1])
+    }
+}
+const grid = new Object(position = {x: -gridcnt * widt / 2, y: -30, z: -gridcnt * widt / 2}, gridp, gridf, 'baricentric')
 
-],
-[
-    [0, 1, 2]
-])*/
 
 
 
 
 function animate() {
+    let start1 = Date.now()
+
     requestAnimationFrame(animate)
     c.clearRect(0, 0, canvas.width, canvas.height)
     spectator.update()
+
     points.forEach(p => {
         p.update()
     })
+
     faces.sort(compare)
+
     faces.forEach(f => {
         f.update()
     })
+    console.log(Date.now() - start1)
 
 }
 animate()
