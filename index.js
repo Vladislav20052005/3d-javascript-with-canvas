@@ -30,8 +30,9 @@ function computeIntersection(straight_shift, straight_basis, surface_shift, surf
 }
 
 class Object {
-    constructor(position, pointcords, facebends, metrics){
+    constructor(position, angles, pointcords, facebends, metrics){
         this.position = position
+        this.angles = angles
         this.type = 'static'
         this.points = []
         this.faces = []
@@ -49,6 +50,26 @@ class Object {
             let nf = new Face(nm, this.metrics)
             this.faces.push(nf)
             faces.push(nf)
+        })
+    }
+}
+
+
+class HollowObject {
+    constructor(position, pointcords, edgebends){
+        this.position = position
+        this.type = 'static'
+        this.points = []
+        this.edges = []
+        pointcords.forEach(pc => {
+            let np = new Point(pc.x + this.position.x, pc.y + this.position.y, pc.z + this.position.z)
+            this.points.push(np)
+            points.push(np)
+        })
+        edgebends.forEach(eb => {
+            let ne = new Edge(this.points[eb[0]], this.points[eb[1]])
+            this.edges.push(ne)
+            edges.push(ne)
         })
     }
 }
@@ -139,11 +160,24 @@ class Edge {
     constructor(p1, p2) {
         this.p1 = p1
         this.p2 = p2
+        console.log(p1, p2)
     }
-    draw(){
+    update(){
         c.beginPath()
-        c.moveTo(this.p1.image.x, this.p1.image.y)
-        c.lineTo(this.p2.image.x, this.p2.image.y)
+        if(this.p1.status == 'visible' && this.p2.status == 'visible'){
+            c.moveTo(this.p1.image.x, this.p1.image.y)
+            c.lineTo(this.p2.image.x, this.p2.image.y)
+        }
+        if(this.p1.status == 'visible' && this.p2.status == 'invisible'){
+            c.moveTo(this.p1.image.x, this.p1.image.y)
+            let a = computeIntersection({x: this.p1.x, y: this.p1.y, z: this.p1.z}, {x: this.p2.x - this.p1.x, y: this.p2.y - this.p1.y, z: this.p2.z - this.p1.z}, spectator.corvp, spectator.vecup, spectator.vecri)
+            c.lineTo(norm * a[2] + canvas.width / 2, -norm * a[1] + canvas.height / 2)
+        }
+        if(this.p1.status == 'invisible' && this.p2.status == 'visible'){
+            let a = computeIntersection({x: this.p1.x, y: this.p1.y, z: this.p1.z}, {x: this.p2.x - this.p1.x, y: this.p2.y - this.p1.y, z: this.p2.z - this.p1.z}, spectator.corvp, spectator.vecup, spectator.vecri)
+            c.moveTo(norm * a[2] + canvas.width / 2, -norm * a[1] + canvas.height / 2)
+            c.lineTo(this.p2.image.x, this.p2.image.y)
+        }
         c.strokeStyle = '#00ff00'
         c.lineWidth = 1.5
         c.stroke()
@@ -220,92 +254,145 @@ class Spectator {
         this.vecvp.y = Math.sin(this.alpha) * this.rfov
         this.vecvp.x = Math.cos(this.beta) * Math.cos(this.alpha) * this.rfov
         this.vecvp.z = Math.sin(this.beta) * Math.cos(this.alpha) * this.rfov
+
         this.vecup.y = Math.cos(this.alpha)
         this.vecup.x = -Math.cos(this.beta) * Math.sin(this.alpha)
         this.vecup.z = -Math.sin(this.beta) * Math.sin(this.alpha)
+
         this.vecri.x = -Math.sin(this.beta)
         this.vecri.z = Math.cos(this.beta)
+
         this.corvp.x = this.x + this.vecvp.x
         this.corvp.y = this.y + this.vecvp.y
         this.corvp.z = this.z + this.vecvp.z
     }
     update() {
-        this.x += this.velocity.x * Math.cos(this.beta) - this.velocity.z * Math.sin(this.beta)
-        this.z += this.velocity.x * Math.sin(this.beta) + this.velocity.z * Math.cos(this.beta)
+        this.x += (this.velocity.x * Math.cos(this.beta) - this.velocity.z * Math.sin(this.beta))
+        this.z += (this.velocity.x * Math.sin(this.beta) + this.velocity.z * Math.cos(this.beta))
         this.y += this.velocity.y
         if(this.alpha <= Math.PI / 2 && this.alpha >= - Math.PI / 2){
-            this.alpha += this.angleVelocity.alpha
+            this.alpha += this.angleVelocity.alpha * 2
         }
         else{
             if(this.alpha > 0){this.alpha = Math.PI / 2}
             else{this.alpha = -Math.PI / 2}
         }
-        this.beta += this.angleVelocity.beta
+        this.beta += this.angleVelocity.beta * 2
         this.calculatevp()
     }
 }
 
+
+
 let points = []
+let edges = []
 let faces = []
 const spectator = new Spectator(-3, 0, 0)
 
 
-
-const object = new Object(position = {x: 0, y: 0, z: 0}, [
-    {x: -10, y: 0, z: -10},
-    {x: -10, y: -1, z: -10},
-    {x: 10, y: 0, z: -10},
-    {x: 10, y: -1, z: -10},
-    {x: -10, y: 0, z: 10},
-    {x: -10, y: -1, z: 10},
-    {x: 10, y: 0, z: 10},
-    {x: 10, y: -1, z: 10}
-],
-[
+const platformWidth = 20
+const object = new Object(position = {x: 0, y: 0, z: 0}, angles = {alpha: 0, beta: 0}, [
+    {x: -platformWidth, y: 0, z: -platformWidth},
+    {x: -platformWidth, y: -1, z: -platformWidth},
+    {x: platformWidth, y: 0, z: -platformWidth},
+    {x: platformWidth, y: -1, z: -platformWidth},
+    {x: -platformWidth, y: 0, z: platformWidth},
+    {x: -platformWidth, y: -1, z: platformWidth},
+    {x: platformWidth, y: 0, z: platformWidth},
+    {x: platformWidth, y: -1, z: platformWidth}
+], [
     [0, 1, 3, 2],
     [0, 1, 5, 4],
     [2, 3, 7, 6],
     [4, 5, 7, 6],
     [0, 2, 6, 4]
-], 'minpoint')
+], 'maxpoint')
 
-const gridcnt = 30
-const widt = 30
+const gridcnt = 60
+const widt = 100
 let gridp = []
 for(let i = 0; i < gridcnt; i++){
     for(let j = 0; j < gridcnt; j++){
         gridp.push({x: i * widt, y: 0, z: j * widt})
     }
 }
-let gridf = []
+let gride = []
 for(let i = 0; i < gridcnt - 1; i++){
-    for(let j = 0; j < gridcnt - 1; j++){
-        gridf.push([i * gridcnt + j, (i + 1) * gridcnt + j, (i + 1) * gridcnt + j + 1, i * gridcnt + j + 1])
+    for(let j = 0; j < gridcnt; j++){
+        gride.push([i * gridcnt + j, (i + 1) * gridcnt + j])
     }
 }
-const grid = new Object(position = {x: -gridcnt * widt / 2, y: -30, z: -gridcnt * widt / 2}, gridp, gridf, 'baricentric')
+for(let i = 0; i < gridcnt; i++){
+    for(let j = 0; j < gridcnt - 1; j++){
+        gride.push([i * gridcnt + j, i * gridcnt + j + 1])
+    }
+}
+const grid = new HollowObject(position = {x: -gridcnt * widt / 2, y: -40, z: -gridcnt * widt / 2}, gridp, gride)
+
+const gaem = new Object(position = {x: 10, y: 0, z: 3}, angles = {alpha: 0, beta: 0}, [
+    {x: 0, y: 0, z: 0},//0
+    {x: 3, y: 0, z: 0},//1
+    {x: 3, y: 0, z: 3},//2
+    {x: 0, y: 0, z: 3},//3
+
+    {x: 0, y: 3, z: 0},//4
+    {x: 3, y: 3, z: 0},//5
+    {x: 3, y: 3, z: 3},//6
+    {x: 0, y: 3, z: 3},//7
+
+    {x: 1, y: 4, z: 0},//8
+    {x: 3, y: 4, z: 0},//9
+    {x: 3, y: 4, z: 3},//10
+    {x: 1, y: 4, z: 3},//11
+
+    {x: 1, y: 6, z: 0},//12
+    {x: 3, y: 6, z: 0},//13
+    {x: 3, y: 6, z: 3},//14
+    {x: 1, y: 6, z: 3},//15
+
+    {x: 0, y: 0, z: 0},
+    {x: 0, y: 0, z: 0},
+    {x: 0, y: 0, z: 0},
+    {x: 0, y: 0, z: 0},
+    {x: 0, y: 0, z: 0},
+    {x: 0, y: 0, z: 0},
+    {x: 0, y: 0, z: 0},
+    {x: 0, y: 0, z: 0}
+
+], [
+
+    [12, 13, 14, 15],
+    [0, 1, 13, 12, 8, 4],
+    [3, 2, 14, 15, 11, 7],
+    [1, 2, 14, 13],
+    [0, 3, 7, 4],
+    [4, 7, 11, 8],
+    [8, 11, 15, 12]
+], 'baricentric')
 
 
 
 
 
 function animate() {
-    let start1 = Date.now()
+    let start = Date.now()
 
     requestAnimationFrame(animate)
     c.clearRect(0, 0, canvas.width, canvas.height)
-    spectator.update()
 
     points.forEach(p => {
         p.update()
     })
-
+    edges.forEach(e => {
+        e.update()
+    })
     faces.sort(compare)
 
     faces.forEach(f => {
         f.update()
     })
-    console.log(Date.now() - start1)
+    console.log(Date.now() - start)
+    spectator.update(Date.now() - start)
 
 }
 animate()
