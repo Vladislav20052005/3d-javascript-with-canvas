@@ -30,10 +30,8 @@ function computeIntersection(straight_shift, straight_basis, surface_shift, surf
 }
 
 class Object {
-    constructor(position, angles, pointcords, facebends, metrics){
+    constructor(position, pointcords, facebends, metrics){
         this.position = position
-        this.angles = angles
-        this.type = 'static'
         this.points = []
         this.faces = []
         this.metrics = metrics
@@ -58,7 +56,6 @@ class Object {
 class HollowObject {
     constructor(position, pointcords, edgebends){
         this.position = position
-        this.type = 'static'
         this.points = []
         this.edges = []
         pointcords.forEach(pc => {
@@ -72,6 +69,41 @@ class HollowObject {
             edges.push(ne)
         })
     }
+}
+
+class Particle extends Object {
+    constructor(position, pointcords, edgebends, metrics, velocity, angles, angleVelocity) {
+        super(position, pointcords, edgebends, metrics)
+        //this.position = position
+        this.velocity = velocity
+        this.angles = angles
+        this.angleVelocity = angleVelocity
+    }
+    update(){
+        this.position.alpha += this.velocity.alpha
+        this.position.y += this.velocity.y
+        this.position.r += this.velocity.r
+
+        this.angles.alpha += this.angleVelocity.alpha
+        this.angles.beta += this.angleVelocity.beta
+
+        this.points[0].y = Math.sin(this.angles.alpha) + this.position.y
+        this.points[0].x = Math.cos(this.angles.beta) * Math.cos(this.angles.alpha) + Math.cos(this.position.alpha) * this.position.r
+        this.points[0].z = Math.sin(this.angles.beta) * Math.cos(this.angles.alpha) + Math.sin(this.position.alpha) * this.position.r
+
+        this.points[1].y = -0.5 * Math.sin(this.angles.alpha) + this.position.y
+        this.points[1].x = -0.5 * Math.cos(this.angles.beta) * Math.cos(this.angles.alpha) - 0.866 * Math.sin(this.angles.beta) + Math.cos(this.position.alpha) * this.position.r
+        this.points[1].z = -0.5 * Math.sin(this.angles.beta) * Math.cos(this.angles.alpha) + 0.866 * Math.cos(this.angles.beta) + Math.sin(this.position.alpha) * this.position.r
+
+        this.points[2].y = -0.5 * Math.sin(this.angles.alpha) + this.position.y
+        this.points[2].x = -0.5 * Math.cos(this.angles.beta) * Math.cos(this.angles.alpha) + 0.866 * Math.sin(this.angles.beta) + Math.cos(this.position.alpha) * this.position.r
+        this.points[2].z = -0.5 * Math.sin(this.angles.beta) * Math.cos(this.angles.alpha) - 0.866 * Math.cos(this.angles.beta) + Math.sin(this.position.alpha) * this.position.r
+
+        if(this.position.y < -10){
+            this.position.y = 60
+        }
+    }
+
 }
 
 class Face {
@@ -160,7 +192,6 @@ class Edge {
     constructor(p1, p2) {
         this.p1 = p1
         this.p2 = p2
-        console.log(p1, p2)
     }
     update(){
         c.beginPath()
@@ -193,7 +224,7 @@ class Point {
         this.sx = 0
         this.sy = 0
         this.image = {x: 50, y: 50}
-        this.velocity = 0
+        this.velocity = {x: 0, y: 0, z: 0}
         this.radius = 2
         this.status = 'visible'
         this.distance = 0
@@ -213,6 +244,10 @@ class Point {
 
 
     update() {
+        this.x += this.velocity.x
+        this.y += this.velocity.y
+        this.z += this.velocity.z
+
         this.distance = (spectator.x - this.x) ** 2 + (spectator.y - this.y) ** 2 + (spectator.z - this.z) ** 2
         let a = computeIntersection({x: this.x, y: this.y, z: this.z}, {x: spectator.x - this.x, y: spectator.y - this.y, z: spectator.z - this.z},
             spectator.corvp, spectator.vecup, spectator.vecri)
@@ -289,7 +324,7 @@ let edges = []
 let faces = []
 const spectator = new Spectator(-3, 0, 0)
 
-
+/*
 const platformWidth = 20
 const object = new Object(position = {x: 0, y: 0, z: 0}, angles = {alpha: 0, beta: 0}, [
     {x: -platformWidth, y: 0, z: -platformWidth},
@@ -307,29 +342,66 @@ const object = new Object(position = {x: 0, y: 0, z: 0}, angles = {alpha: 0, bet
     [4, 5, 7, 6],
     [0, 2, 6, 4]
 ], 'maxpoint')
+*/
 
-const gridcnt = 60
-const widt = 100
+const platformwidth = 10
+const platformheight = 12
+const brickwidth = 6
+const brickheight = 4
+
+let platp = []
+for(let i = 0; i < platformheight; i++){
+    for(let j = 0; j < platformwidth; j++){
+        platp.push({x: i * brickheight, y: 0, z: j * brickwidth})
+    }
+}
+let platf = []
+for(let i = 0; i < platformheight - 1; i+=2){
+    for(let j = 0; j < platformwidth - 2; j+=2){
+        platf.push([i * platformwidth + j, (i + 1) * platformwidth + j, (i + 1) * platformwidth + j + 2, i * platformwidth + j + 2])
+    }
+}
+for(let i = 1; i < platformheight - 1; i+=2){
+    for(let j = 0; j < platformwidth - 2; j++){
+        platf.push([i * platformwidth, (i + 1) * platformwidth, (i + 1) * platformwidth + 1, i * platformwidth + 1])
+        platf.push([i * platformwidth + platformwidth - 3, (i + 1) * platformwidth + platformwidth - 3, (i + 1) * platformwidth + platformwidth - 2, i * platformwidth + platformwidth - 2])
+
+    }
+}
+for(let i = 1; i < platformheight - 1; i+=2){
+    for(let j = 1; j < platformwidth - 3; j+=2){
+        platf.push([i * platformwidth + j, (i + 1) * platformwidth + j, (i + 1) * platformwidth + j + 2, i * platformwidth + j + 2])
+    }
+}
+const platform = new Object(position = {x: -platformheight * brickheight / 2, y: 0, z: -platformwidth * brickwidth / 2}, platp, platf, 'maxpoint')
+
+
+
+
+const gridsize = 50
+const widt = 40
+
 let gridp = []
-for(let i = 0; i < gridcnt; i++){
-    for(let j = 0; j < gridcnt; j++){
+for(let i = 0; i < gridsize; i++){
+    for(let j = 0; j < gridsize; j++){
         gridp.push({x: i * widt, y: 0, z: j * widt})
     }
 }
 let gride = []
-for(let i = 0; i < gridcnt - 1; i++){
-    for(let j = 0; j < gridcnt; j++){
-        gride.push([i * gridcnt + j, (i + 1) * gridcnt + j])
+for(let i = 0; i < gridsize - 1; i++){
+    for(let j = 0; j < gridsize; j++){
+        gride.push([i * gridsize + j, (i + 1) * gridsize + j])
     }
 }
-for(let i = 0; i < gridcnt; i++){
-    for(let j = 0; j < gridcnt - 1; j++){
-        gride.push([i * gridcnt + j, i * gridcnt + j + 1])
+for(let i = 0; i < gridsize; i++){
+    for(let j = 0; j < gridsize - 1; j++){
+        gride.push([i * gridsize + j, i * gridsize + j + 1])
     }
 }
-const grid = new HollowObject(position = {x: -gridcnt * widt / 2, y: -40, z: -gridcnt * widt / 2}, gridp, gride)
+const wavecenter = {x: 0, y: -40, z: 0}
+const grid = new HollowObject(position = {x: -gridsize * widt / 2, y: -40, z: -gridsize * widt / 2}, gridp, gride)
 
-const gaem = new Object(position = {x: 10, y: 0, z: 3}, angles = {alpha: 0, beta: 0}, [
+const gaem = new Object(position = {x: 10, y: 0, z: 3}, [
     {x: 0, y: 0, z: 0},//0
     {x: 3, y: 0, z: 0},//1
     {x: 3, y: 0, z: 3},//2
@@ -373,13 +445,21 @@ const gaem = new Object(position = {x: 10, y: 0, z: 3}, angles = {alpha: 0, beta
 
 
 
+let start = Date.now()
+let end
+let particles = []
+
 
 function animate() {
-    let start = Date.now()
-
+    start = Date.now()
     requestAnimationFrame(animate)
     c.clearRect(0, 0, canvas.width, canvas.height)
-
+    particles.forEach(pr => {
+        pr.update()
+    })
+    grid.points.forEach(p => {
+        p.velocity.y = Math.sin((Date.now() / 1000) + (Math.abs(p.x) + Math.abs(p.z)) * Math.PI / 300) / 10
+    })
     points.forEach(p => {
         p.update()
     })
@@ -391,34 +471,48 @@ function animate() {
     faces.forEach(f => {
         f.update()
     })
-    console.log(Date.now() - start)
-    spectator.update(Date.now() - start)
+    end = Date.now() - start
+    //console.log(Date.now() - start)
+    spectator.update()
 
 }
 animate()
 
 
 
+function createParticle() {
+    let newParticle = new Particle(position = {alpha: Math.random() * 2 * Math.PI, y: 50, r: 35}, [
+        {x: 1, y: 0, z: 0},
+        {x: 0, y: 1, z: 0},
+        {x: 0, y: 0, z: 1}
+    ], [[0, 1, 2]], 'maxpoint', velocity = {alpha: (Math.random() - 0.5) * 0.01, y: -0.07, r: (Math.random() - 0.5) * 0}, angles = {alpha: 0, beta: 0}, angleVelocity = {alpha: 0.01, beta: 0.01})
+    particles.push(newParticle)
+    if(particles.length == 100){
+        clearInterval(timerID)
+    }
+}
+
+let timerID = setInterval(createParticle, 100)
 
 addEventListener('keydown', ({key}) => {
     switch (key){
         case 'w':
-            spectator.velocity.x = 0.1
+            spectator.velocity.x = 0.2
             break
         case 'a':
-            spectator.velocity.z = -0.1
+            spectator.velocity.z = -0.2
             break
         case 's':
-            spectator.velocity.x = -0.1
+            spectator.velocity.x = -0.2
             break
         case 'd':
-            spectator.velocity.z = 0.1
+            spectator.velocity.z = 0.2
             break
         case 'x':
-            spectator.velocity.y = -0.1
+            spectator.velocity.y = -0.2
             break
         case ' ':
-            spectator.velocity.y = 0.1
+            spectator.velocity.y = 0.2
             break
         case 'l':
             spectator.angleVelocity.beta = 0.02
