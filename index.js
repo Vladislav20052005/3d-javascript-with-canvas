@@ -3,7 +3,6 @@ const c = canvas.getContext('2d')
 
 canvas.width = innerWidth
 canvas.height = innerHeight
-const norm = 100
 
 function compare(a, b){
     if(a.distance < b.distance){
@@ -159,7 +158,7 @@ class Face {
             }
         }
         c.strokeStyle = 'green'
-        c.lineWidth = 2
+        c.lineWidth = 1
         let i = firstvis
         while(i < this.order + firstvis){
             if(this.points[i % this.order].status == 'visible' && this.points[(i + 1) % this.order].status == 'visible'){
@@ -169,12 +168,12 @@ class Face {
                 let a = computeIntersection({x: this.points[i % this.order].x, y: this.points[i % this.order].y, z: this.points[i % this.order].z}, {x: this.points[(i + 1) % this.order].x - this.points[i % this.order].x, y: this.points[(i + 1) % this.order].y - this.points[i % this.order].y, z: this.points[(i + 1) % this.order].z - this.points[i % this.order].z},
                 spectator.corvp, spectator.vecup, spectator.vecri)
                 c.lineTo(this.points[i % this.order].image.x, this.points[i % this.order].image.y)
-                c.lineTo(norm * a[2] + canvas.width / 2, -norm * a[1] + canvas.height / 2)
+                c.lineTo(Point.norm * a[2] + canvas.width / 2, -Point.norm * a[1] + canvas.height / 2)
             }
             if(this.points[i % this.order].status == 'invisible' && this.points[(i + 1) % this.order].status == 'visible'){
                 let a = computeIntersection({x: this.points[i % this.order].x, y: this.points[i % this.order].y, z: this.points[i % this.order].z}, {x: this.points[(i + 1) % this.order].x - this.points[i % this.order].x, y: this.points[(i + 1) % this.order].y - this.points[i % this.order].y, z: this.points[(i + 1) % this.order].z - this.points[i % this.order].z},
                 spectator.corvp, spectator.vecup, spectator.vecri)
-                c.lineTo(norm * a[2] + canvas.width / 2, -norm * a[1] + canvas.height / 2)
+                c.lineTo(Point.norm * a[2] + canvas.width / 2, -Point.norm * a[1] + canvas.height / 2)
                 c.lineTo(this.points[(i + 1) % this.order].image.x, this.points[(i + 1) % this.order].image.y)
             }
             i++;
@@ -202,21 +201,22 @@ class Edge {
         if(this.p1.status == 'visible' && this.p2.status == 'invisible'){
             c.moveTo(this.p1.image.x, this.p1.image.y)
             let a = computeIntersection({x: this.p1.x, y: this.p1.y, z: this.p1.z}, {x: this.p2.x - this.p1.x, y: this.p2.y - this.p1.y, z: this.p2.z - this.p1.z}, spectator.corvp, spectator.vecup, spectator.vecri)
-            c.lineTo(norm * a[2] + canvas.width / 2, -norm * a[1] + canvas.height / 2)
+            c.lineTo(Point.norm * a[2] + canvas.width / 2, -Point.norm * a[1] + canvas.height / 2)
         }
         if(this.p1.status == 'invisible' && this.p2.status == 'visible'){
             let a = computeIntersection({x: this.p1.x, y: this.p1.y, z: this.p1.z}, {x: this.p2.x - this.p1.x, y: this.p2.y - this.p1.y, z: this.p2.z - this.p1.z}, spectator.corvp, spectator.vecup, spectator.vecri)
-            c.moveTo(norm * a[2] + canvas.width / 2, -norm * a[1] + canvas.height / 2)
+            c.moveTo(Point.norm * a[2] + canvas.width / 2, -Point.norm * a[1] + canvas.height / 2)
             c.lineTo(this.p2.image.x, this.p2.image.y)
         }
         c.strokeStyle = '#00ff00'
-        c.lineWidth = 1.5
+        c.lineWidth = 0.7
         c.stroke()
     }
 }
 
 
 class Point {
+    static norm = 100
     constructor(x, y, z) {
         this.x = x
         this.y = y
@@ -228,18 +228,6 @@ class Point {
         this.radius = 2
         this.status = 'visible'
         this.distance = 0
-    }
-
-
-    display() {
-        let det = determinant(spectator.x - this.x, -spectator.vecup.x, -spectator.vecri.x, spectator.y - this.y, -spectator.vecup.y, -spectator.vecri.y, spectator.z - this.z, -spectator.vecup.z, -spectator.vecri.z)
-        let det1 = determinant(spectator.corvp.x - this.x, -spectator.vecup.x, -spectator.vecri.x, spectator.corvp.y - this.y, -spectator.vecup.y, -spectator.vecri.y, spectator.corvp.z - this.z, -spectator.vecup.z, -spectator.vecri.z)
-        if(det1 / det >= 1 || det1 / det <= 0){return true}
-        let det2 = determinant(spectator.x - this.x, spectator.corvp.x - this.x, -spectator.vecri.x, spectator.y - this.y, spectator.corvp.y - this.y, -spectator.vecri.y, spectator.z - this.z, spectator.corvp.z - this.z, -spectator.vecri.z)
-        let det3 = determinant(spectator.x - this.x, -spectator.vecup.x, spectator.corvp.x - this.x, spectator.y - this.y, -spectator.vecup.y, spectator.corvp.y - this.y, spectator.z - this.z, -spectator.vecup.z, spectator.corvp.z - this.z)
-        this.sx = det3 / det
-        this.sy = det2 / det
-        return false
     }
 
 
@@ -256,12 +244,8 @@ class Point {
         this.sy = a[1]
         this.sx = a[2]
 
-        //this.display()
-        //if(this.display()){this.status = 'invisible'}
-        //else{this.status = 'visible'}
-        //const norm = 100
-        this.image.x = norm * this.sx + canvas.width / 2
-        this.image.y = -norm * this.sy + canvas.height / 2
+        this.image.x = Point.norm * this.sx + canvas.width / 2
+        this.image.y = -Point.norm * this.sy + canvas.height / 2
         /*c.beginPath()
         c.arc(this.image.x, this.image.y, this.radius, 0, Math.PI * 2)
         c.fillStyle = 'yellow'
@@ -279,6 +263,8 @@ class Spectator {
         this.angleVelocity = {alpha: 0, beta: 0}
         this.alpha = 0
         this.beta = 0
+        this.height = 6
+        this.gravity = -0.005
         this.rfov = 2
         this.vecvp = {x: this.rfov, y: 0, z: 0}
         this.corvp = {x: this.x + this.rfov, y: 0, z: 0}
@@ -304,7 +290,7 @@ class Spectator {
     update() {
         this.x += (this.velocity.x * Math.cos(this.beta) - this.velocity.z * Math.sin(this.beta))
         this.z += (this.velocity.x * Math.sin(this.beta) + this.velocity.z * Math.cos(this.beta))
-        this.y += this.velocity.y
+        //this.y += this.velocity.y
         if(this.alpha <= Math.PI / 2 && this.alpha >= - Math.PI / 2){
             this.alpha += this.angleVelocity.alpha * 2
         }
@@ -312,37 +298,44 @@ class Spectator {
             if(this.alpha > 0){this.alpha = Math.PI / 2}
             else{this.alpha = -Math.PI / 2}
         }
+
         this.beta += this.angleVelocity.beta * 2
         this.calculatevp()
+        if(this.x > floor.x && this.x < floor.x + floor.height && this.z > floor.z && this.z < floor.z + floor.width && this.y > floor.y && this.y < floor.y + this.height && this.velocity.y <= 0){
+            this.velocity.y = 0
+            console.log(891247)
+        }
+        else{
+            console.log(123)
+            this.velocity.y += this.gravity
+            this.y += this.velocity.y
+        }
+        //this.y += this.velocity.y
+        if(this.y < -190){
+            this.x = -3
+            this.y = 6
+            this.z = 0
+            this.velocity.y = 0
+        }
     }
 }
 
+
+class Floor {
+    constructor(x, y, z, width, height){
+        this.x = x
+        this.y = y
+        this.z = z
+        this.width = width
+        this.height = height
+    }
+}
 
 
 let points = []
 let edges = []
 let faces = []
-const spectator = new Spectator(-3, 0, 0)
-
-/*
-const platformWidth = 20
-const object = new Object(position = {x: 0, y: 0, z: 0}, angles = {alpha: 0, beta: 0}, [
-    {x: -platformWidth, y: 0, z: -platformWidth},
-    {x: -platformWidth, y: -1, z: -platformWidth},
-    {x: platformWidth, y: 0, z: -platformWidth},
-    {x: platformWidth, y: -1, z: -platformWidth},
-    {x: -platformWidth, y: 0, z: platformWidth},
-    {x: -platformWidth, y: -1, z: platformWidth},
-    {x: platformWidth, y: 0, z: platformWidth},
-    {x: platformWidth, y: -1, z: platformWidth}
-], [
-    [0, 1, 3, 2],
-    [0, 1, 5, 4],
-    [2, 3, 7, 6],
-    [4, 5, 7, 6],
-    [0, 2, 6, 4]
-], 'maxpoint')
-*/
+const spectator = new Spectator(-3, 6, 0)
 
 const platformwidth = 10
 const platformheight = 12
@@ -361,19 +354,21 @@ for(let i = 0; i < platformheight - 1; i+=2){
         platf.push([i * platformwidth + j, (i + 1) * platformwidth + j, (i + 1) * platformwidth + j + 2, i * platformwidth + j + 2])
     }
 }
-for(let i = 1; i < platformheight - 1; i+=2){
-    for(let j = 0; j < platformwidth - 2; j++){
-        platf.push([i * platformwidth, (i + 1) * platformwidth, (i + 1) * platformwidth + 1, i * platformwidth + 1])
-        platf.push([i * platformwidth + platformwidth - 3, (i + 1) * platformwidth + platformwidth - 3, (i + 1) * platformwidth + platformwidth - 2, i * platformwidth + platformwidth - 2])
 
-    }
-}
 for(let i = 1; i < platformheight - 1; i+=2){
-    for(let j = 1; j < platformwidth - 3; j+=2){
+    platf.push([i * platformwidth, (i + 1) * platformwidth, (i + 1) * platformwidth + 1, i * platformwidth + 1])
+}
+for(let i = 0; i < platformheight - 1; i+=2){
+    platf.push([i * platformwidth + platformwidth - 2, (i + 1) * platformwidth + platformwidth - 2, (i + 1) * platformwidth + platformwidth - 1, i * platformwidth + platformwidth - 1])
+}
+
+for(let i = 1; i < platformheight - 1; i+=2){
+    for(let j = 1; j < platformwidth - 2; j+=2){
         platf.push([i * platformwidth + j, (i + 1) * platformwidth + j, (i + 1) * platformwidth + j + 2, i * platformwidth + j + 2])
     }
 }
-const platform = new Object(position = {x: -platformheight * brickheight / 2, y: 0, z: -platformwidth * brickwidth / 2}, platp, platf, 'maxpoint')
+const platform = new Object(position = {x: -(platformheight - 1) * brickheight / 2, y: 0, z: -(platformwidth - 1) * brickwidth / 2}, platp, platf, 'maxpoint')
+let floor = new Floor(-(platformheight - 1) * brickheight / 2, 0, -(platformwidth - 1) * brickwidth / 2, platformwidth * brickwidth, platformheight * brickheight)
 
 
 
@@ -401,7 +396,7 @@ for(let i = 0; i < gridsize; i++){
 const wavecenter = {x: 0, y: -40, z: 0}
 const grid = new HollowObject(position = {x: -gridsize * widt / 2, y: -40, z: -gridsize * widt / 2}, gridp, gride)
 
-const gaem = new Object(position = {x: 10, y: 0, z: 3}, [
+const gaem1 = new Object(position = {x: 10, y: 0, z: 0}, [
     {x: 0, y: 0, z: 0},//0
     {x: 3, y: 0, z: 0},//1
     {x: 3, y: 0, z: 3},//2
@@ -422,14 +417,26 @@ const gaem = new Object(position = {x: 10, y: 0, z: 3}, [
     {x: 3, y: 6, z: 3},//14
     {x: 1, y: 6, z: 3},//15
 
-    {x: 0, y: 0, z: 0},
-    {x: 0, y: 0, z: 0},
-    {x: 0, y: 0, z: 0},
-    {x: 0, y: 0, z: 0},
-    {x: 0, y: 0, z: 0},
-    {x: 0, y: 0, z: 0},
-    {x: 0, y: 0, z: 0},
-    {x: 0, y: 0, z: 0}
+    {x: 1.2, y: 4.2, z: 0.2},//16
+    {x: 1.2, y: 4.2, z: 2.8},//17
+    {x: 1.2, y: 5.8, z: 0.2},//18
+    {x: 1.2, y: 5.8, z: 2.8},//19
+
+    {x: 0.6, y: 3.63, z: 1.37},//20
+    {x: 0.6, y: 3.63, z: 1.63},//21
+    {x: 0.75, y: 3.8, z: 1.5},//22
+
+    {x: 0.4, y: 3.37, z: 1.37},//23
+    {x: 0.4, y: 3.37, z: 1.63},//24
+    {x: 0.25, y: 3.2, z: 1.5},//25
+
+    {x: 0.4, y: 3.4, z: 1.35},//26
+    {x: 0.6, y: 3.6, z: 1.35},//27
+    {x: 0.5, y: 3.5, z: 1.1},//28
+
+    {x: 0.4, y: 3.4, z: 1.65},//29
+    {x: 0.6, y: 3.6, z: 1.65},//30
+    {x: 0.5, y: 3.5, z: 1.9},//31
 
 ], [
 
@@ -439,14 +446,145 @@ const gaem = new Object(position = {x: 10, y: 0, z: 3}, [
     [1, 2, 14, 13],
     [0, 3, 7, 4],
     [4, 7, 11, 8],
-    [8, 11, 15, 12]
-], 'baricentric')
+    [17, 16, 18, 19],
+    [8, 11, 17, 16],
+    [8, 12, 18, 16],
+    [15, 11, 17, 19],
+    [15, 12, 18, 19],
+
+    [20, 21, 22],
+    [23, 24, 25],
+    [26, 27, 28],
+    [29, 30, 31],
+
+], 'maxpoint')
+
+const gaem2 = new Object(position = {x: 10, y: 0, z: -3}, [
+    {x: 0, y: 0, z: 0},//0
+    {x: 3, y: 0, z: 0},//1
+    {x: 3, y: 0, z: 3},//2
+    {x: 0, y: 0, z: 3},//3
+
+    {x: 0, y: 3, z: 0},//4
+    {x: 3, y: 3, z: 0},//5
+    {x: 3, y: 3, z: 3},//6
+    {x: 0, y: 3, z: 3},//7
+
+    {x: 1, y: 4, z: 0},//8
+    {x: 3, y: 4, z: 0},//9
+    {x: 3, y: 4, z: 3},//10
+    {x: 1, y: 4, z: 3},//11
+
+    {x: 1, y: 6, z: 0},//12
+    {x: 3, y: 6, z: 0},//13
+    {x: 3, y: 6, z: 3},//14
+    {x: 1, y: 6, z: 3},//15
+
+    {x: 1.2, y: 4.2, z: 0.2},//16
+    {x: 1.2, y: 4.2, z: 2.8},//17
+    {x: 1.2, y: 5.8, z: 0.2},//18
+    {x: 1.2, y: 5.8, z: 2.8},//19
+
+    {x: 0.35, y: 3.35, z: 1.25},//20
+    {x: 0.65, y: 3.65, z: 1.25},//21
+    {x: 0.5, y: 3.5, z: 1.02},//22
+
+    {x: 0.35, y: 3.35, z: 1.75},//23
+    {x: 0.65, y: 3.65, z: 1.75},//24
+    {x: 0.5, y: 3.5, z: 1.98},//25
+
+    {x: 0.35, y: 3.35, z: 1.4},//26
+    {x: 0.65, y: 3.65, z: 1.4},//27
+    {x: 0.35, y: 3.35, z: 1.6},//28
+    {x: 0.65, y: 3.65, z: 1.6},//29
+], [
+
+    [12, 13, 14, 15],
+    [0, 1, 13, 12, 8, 4],
+    [3, 2, 14, 15, 11, 7],
+    [1, 2, 14, 13],
+    [0, 3, 7, 4],
+    [4, 7, 11, 8],
+    [17, 16, 18, 19],
+    [8, 11, 17, 16],
+    [8, 12, 18, 16],
+    [15, 11, 17, 19],
+    [15, 12, 18, 19],
+    [20, 21, 22],
+    [23, 24, 25],
+    [26, 27, 29, 28]
+
+], 'maxpoint')
+
+const gaem3 = new Object(position = {x: 10, y: 0, z: 3}, [
+    {x: 0, y: 0, z: 0},//0
+    {x: 3, y: 0, z: 0},//1
+    {x: 3, y: 0, z: 3},//2
+    {x: 0, y: 0, z: 3},//3
+
+    {x: 0, y: 3, z: 0},//4
+    {x: 3, y: 3, z: 0},//5
+    {x: 3, y: 3, z: 3},//6
+    {x: 0, y: 3, z: 3},//7
+
+    {x: 1, y: 4, z: 0},//8
+    {x: 3, y: 4, z: 0},//9
+    {x: 3, y: 4, z: 3},//10
+    {x: 1, y: 4, z: 3},//11
+
+    {x: 1, y: 6, z: 0},//12
+    {x: 3, y: 6, z: 0},//13
+    {x: 3, y: 6, z: 3},//14
+    {x: 1, y: 6, z: 3},//15
+
+    {x: 1.2, y: 4.2, z: 0.2},//16
+    {x: 1.2, y: 4.2, z: 2.8},//17
+    {x: 1.2, y: 5.8, z: 0.2},//18
+    {x: 1.2, y: 5.8, z: 2.8},//19
+
+    {x: 0.4, y: 3.35, z: 1.15},//20
+    {x: 0.6, y: 3.65, z: 1.15},//21
+    {x: 0.4, y: 3.35, z: 1.45},//22
+    {x: 0.6, y: 3.65, z: 1.45},//23
+
+    {x: 0.4, y: 3.35, z: 1.55},//24
+    {x: 0.6, y: 3.65, z: 1.55},//25
+    {x: 0.4, y: 3.35, z: 1.85},//26
+    {x: 0.6, y: 3.65, z: 1.85},//27
+
+    {x: 0.4, y: 3.35, z: 1.95},//28
+    {x: 0.6, y: 3.65, z: 1.95},//29
+    {x: 0.4, y: 3.35, z: 2.25},//30
+    {x: 0.6, y: 3.65, z: 2.25},//31
+
+    {x: 0.4, y: 3.35, z: 0.75},//32
+    {x: 0.6, y: 3.65, z: 0.75},//33
+    {x: 0.4, y: 3.35, z: 1.05},//34
+    {x: 0.6, y: 3.65, z: 1.05},//35
+
+], [
+
+    [12, 13, 14, 15],
+    [0, 1, 13, 12, 8, 4],
+    [3, 2, 14, 15, 11, 7],
+    [1, 2, 14, 13],
+    [0, 3, 7, 4],
+    [4, 7, 11, 8],
+    [17, 16, 18, 19],
+    [8, 11, 17, 16],
+    [8, 12, 18, 16],
+    [15, 11, 17, 19],
+    [15, 12, 18, 19],
+
+    [20, 21, 23, 22],
+    [24, 25, 27, 26],
+    [28, 29, 31, 30],
+    [32, 33, 35, 34]
 
 
+], 'maxpoint')
 
 
-let start = Date.now()
-let end
 let particles = []
 
 
@@ -471,8 +609,6 @@ function animate() {
     faces.forEach(f => {
         f.update()
     })
-    end = Date.now() - start
-    //console.log(Date.now() - start)
     spectator.update()
 
 }
@@ -493,7 +629,7 @@ function createParticle() {
 }
 
 let timerID = setInterval(createParticle, 100)
-
+/*
 addEventListener('keydown', ({key}) => {
     switch (key){
         case 'w':
@@ -543,6 +679,60 @@ addEventListener('keyup', ({key}) => {
             break
         case 'x': case ' ':
             spectator.velocity.y = 0
+            break
+        case 'l': case 'j':
+            spectator.angleVelocity.beta = 0
+            break
+        case 'i': case 'k':
+            spectator.angleVelocity.alpha = 0
+            break
+    }
+})
+*/
+
+addEventListener('keydown', ({key}) => {
+    switch (key){
+        case 'w':
+            spectator.velocity.x = 0.2
+            break
+        case 'a':
+            spectator.velocity.z = -0.2
+            break
+        case 's':
+            spectator.velocity.x = -0.2
+            break
+        case 'd':
+            spectator.velocity.z = 0.2
+            break
+        case ' ':
+            spectator.velocity.y = 0.3
+            break
+        case 'l':
+            spectator.angleVelocity.beta = 0.02
+            break
+        case 'i':
+            if(spectator.alpha < Math.PI / 2){
+                spectator.angleVelocity.alpha = 0.02
+            }
+            break
+        case 'k':
+            if(spectator.alpha > -Math.PI / 2){
+                spectator.angleVelocity.alpha = -0.02
+            }
+            break
+        case 'j':
+            spectator.angleVelocity.beta = -0.02
+            break
+    }
+})
+
+addEventListener('keyup', ({key}) => {
+    switch (key){
+        case 'w': case 's':
+            spectator.velocity.x = 0
+            break
+        case 'a': case 'd':
+            spectator.velocity.z = 0
             break
         case 'l': case 'j':
             spectator.angleVelocity.beta = 0
