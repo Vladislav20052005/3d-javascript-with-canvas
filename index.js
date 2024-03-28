@@ -35,7 +35,7 @@ class Object {
         this.faces = []
         this.metrics = metrics
         pointcords.forEach(pc => {
-            let np = new Point(pc.x + this.position.x, pc.y + this.position.y, pc.z + this.position.z)
+            let np = new Point(position = {x: pc.x + this.position.x, y: pc.y + this.position.y, z: pc.z + this.position.z})
             this.points.push(np)
             points.push(np)
         })
@@ -58,7 +58,7 @@ class HollowObject {
         this.points = []
         this.edges = []
         pointcords.forEach(pc => {
-            let np = new Point(pc.x + this.position.x, pc.y + this.position.y, pc.z + this.position.z)
+            let np = new Point(position = {x: pc.x + this.position.x, y: pc.y + this.position.y, z: pc.z + this.position.z})
             this.points.push(np)
             points.push(np)
         })
@@ -86,20 +86,20 @@ class Particle extends Object {
         this.angles.alpha += this.angleVelocity.alpha
         this.angles.beta += this.angleVelocity.beta
 
-        this.points[0].y = Math.sin(this.angles.alpha) + this.position.y
-        this.points[0].x = Math.cos(this.angles.beta) * Math.cos(this.angles.alpha) + Math.cos(this.position.alpha) * this.position.r
-        this.points[0].z = Math.sin(this.angles.beta) * Math.cos(this.angles.alpha) + Math.sin(this.position.alpha) * this.position.r
+        this.points[0].position.y = Math.sin(this.angles.alpha) + this.position.y
+        this.points[0].position.x = Math.cos(this.angles.beta) * Math.cos(this.angles.alpha) + Math.cos(this.position.alpha) * this.position.r
+        this.points[0].position.z = Math.sin(this.angles.beta) * Math.cos(this.angles.alpha) + Math.sin(this.position.alpha) * this.position.r
 
-        this.points[1].y = -0.5 * Math.sin(this.angles.alpha) + this.position.y
-        this.points[1].x = -0.5 * Math.cos(this.angles.beta) * Math.cos(this.angles.alpha) - 0.866 * Math.sin(this.angles.beta) + Math.cos(this.position.alpha) * this.position.r
-        this.points[1].z = -0.5 * Math.sin(this.angles.beta) * Math.cos(this.angles.alpha) + 0.866 * Math.cos(this.angles.beta) + Math.sin(this.position.alpha) * this.position.r
+        this.points[1].position.y = -0.5 * Math.sin(this.angles.alpha) + this.position.y
+        this.points[1].position.x = -0.5 * Math.cos(this.angles.beta) * Math.cos(this.angles.alpha) - 0.866 * Math.sin(this.angles.beta) + Math.cos(this.position.alpha) * this.position.r
+        this.points[1].position.z = -0.5 * Math.sin(this.angles.beta) * Math.cos(this.angles.alpha) + 0.866 * Math.cos(this.angles.beta) + Math.sin(this.position.alpha) * this.position.r
 
-        this.points[2].y = -0.5 * Math.sin(this.angles.alpha) + this.position.y
-        this.points[2].x = -0.5 * Math.cos(this.angles.beta) * Math.cos(this.angles.alpha) + 0.866 * Math.sin(this.angles.beta) + Math.cos(this.position.alpha) * this.position.r
-        this.points[2].z = -0.5 * Math.sin(this.angles.beta) * Math.cos(this.angles.alpha) - 0.866 * Math.cos(this.angles.beta) + Math.sin(this.position.alpha) * this.position.r
+        this.points[2].position.y = -0.5 * Math.sin(this.angles.alpha) + this.position.y
+        this.points[2].position.x = -0.5 * Math.cos(this.angles.beta) * Math.cos(this.angles.alpha) + 0.866 * Math.sin(this.angles.beta) + Math.cos(this.position.alpha) * this.position.r
+        this.points[2].position.z = -0.5 * Math.sin(this.angles.beta) * Math.cos(this.angles.alpha) - 0.866 * Math.cos(this.angles.beta) + Math.sin(this.position.alpha) * this.position.r
 
         if(this.position.y < -10){
-            this.position.y = 60
+            this.position.y = 100
         }
     }
 
@@ -118,15 +118,15 @@ class Face {
             case 'baricentric':
                 this.baricenter = {x: 0, y: 0, z: 0}
                 this.points.forEach(p => {
-                    this.baricenter.x += p.x
-                    this.baricenter.y += p.y
-                    this.baricenter.z += p.z
+                    this.baricenter.x += p.position.x
+                    this.baricenter.y += p.position.y
+                    this.baricenter.z += p.position.z
                 })
 
                 this.baricenter.x /= this.order
                 this.baricenter.y /= this.order
                 this.baricenter.z /= this.order
-                this.distance = (this.baricenter.x - spectator.x)**2 + (this.baricenter.y - spectator.y)**2 + (this.baricenter.z - spectator.z)**2
+                this.distance = (this.baricenter.x - spectator.position.x)**2 + (this.baricenter.y - spectator.position.y)**2 + (this.baricenter.z - spectator.position.z)**2
                 break
             case 'minpoint':
                 this.distance = 0
@@ -165,13 +165,13 @@ class Face {
                 c.lineTo(this.points[(i + 1) % this.order].image.x, this.points[(i + 1) % this.order].image.y)
             }
             if(this.points[i % this.order].status == 'visible' && this.points[(i + 1) % this.order].status == 'invisible'){
-                let a = computeIntersection({x: this.points[i % this.order].x, y: this.points[i % this.order].y, z: this.points[i % this.order].z}, {x: this.points[(i + 1) % this.order].x - this.points[i % this.order].x, y: this.points[(i + 1) % this.order].y - this.points[i % this.order].y, z: this.points[(i + 1) % this.order].z - this.points[i % this.order].z},
+                let a = computeIntersection(this.points[i % this.order].position, {x: this.points[(i + 1) % this.order].position.x - this.points[i % this.order].position.x, y: this.points[(i + 1) % this.order].position.y - this.points[i % this.order].position.y, z: this.points[(i + 1) % this.order].position.z - this.points[i % this.order].position.z},
                 spectator.corvp, spectator.vecup, spectator.vecri)
                 c.lineTo(this.points[i % this.order].image.x, this.points[i % this.order].image.y)
                 c.lineTo(Point.norm * a[2] + canvas.width / 2, -Point.norm * a[1] + canvas.height / 2)
             }
             if(this.points[i % this.order].status == 'invisible' && this.points[(i + 1) % this.order].status == 'visible'){
-                let a = computeIntersection({x: this.points[i % this.order].x, y: this.points[i % this.order].y, z: this.points[i % this.order].z}, {x: this.points[(i + 1) % this.order].x - this.points[i % this.order].x, y: this.points[(i + 1) % this.order].y - this.points[i % this.order].y, z: this.points[(i + 1) % this.order].z - this.points[i % this.order].z},
+                let a = computeIntersection(this.points[i % this.order].position, {x: this.points[(i + 1) % this.order].position.x - this.points[i % this.order].position.x, y: this.points[(i + 1) % this.order].position.y - this.points[i % this.order].position.y, z: this.points[(i + 1) % this.order].position.z - this.points[i % this.order].position.z},
                 spectator.corvp, spectator.vecup, spectator.vecri)
                 c.lineTo(Point.norm * a[2] + canvas.width / 2, -Point.norm * a[1] + canvas.height / 2)
                 c.lineTo(this.points[(i + 1) % this.order].image.x, this.points[(i + 1) % this.order].image.y)
@@ -200,11 +200,11 @@ class Edge {
         }
         if(this.p1.status == 'visible' && this.p2.status == 'invisible'){
             c.moveTo(this.p1.image.x, this.p1.image.y)
-            let a = computeIntersection({x: this.p1.x, y: this.p1.y, z: this.p1.z}, {x: this.p2.x - this.p1.x, y: this.p2.y - this.p1.y, z: this.p2.z - this.p1.z}, spectator.corvp, spectator.vecup, spectator.vecri)
+            let a = computeIntersection(this.p1.position, {x: this.p2.position.x - this.p1.position.x, y: this.p2.position.y - this.p1.position.y, z: this.p2.position.z - this.p1.position.z}, spectator.corvp, spectator.vecup, spectator.vecri)
             c.lineTo(Point.norm * a[2] + canvas.width / 2, -Point.norm * a[1] + canvas.height / 2)
         }
         if(this.p1.status == 'invisible' && this.p2.status == 'visible'){
-            let a = computeIntersection({x: this.p1.x, y: this.p1.y, z: this.p1.z}, {x: this.p2.x - this.p1.x, y: this.p2.y - this.p1.y, z: this.p2.z - this.p1.z}, spectator.corvp, spectator.vecup, spectator.vecri)
+            let a = computeIntersection(this.p1.position, {x: this.p2.position.x - this.p1.position.x, y: this.p2.position.y - this.p1.position.y, z: this.p2.position.z - this.p1.position.z}, spectator.corvp, spectator.vecup, spectator.vecri)
             c.moveTo(Point.norm * a[2] + canvas.width / 2, -Point.norm * a[1] + canvas.height / 2)
             c.lineTo(this.p2.image.x, this.p2.image.y)
         }
@@ -217,10 +217,8 @@ class Edge {
 
 class Point {
     static norm = 100
-    constructor(x, y, z) {
-        this.x = x
-        this.y = y
-        this.z = z
+    constructor(position) {
+        this.position = position
         this.sx = 0
         this.sy = 0
         this.image = {x: 50, y: 50}
@@ -232,12 +230,12 @@ class Point {
 
 
     update() {
-        this.x += this.velocity.x
-        this.y += this.velocity.y
-        this.z += this.velocity.z
+        this.position.x += this.velocity.x
+        this.position.y += this.velocity.y
+        this.position.z += this.velocity.z
 
-        this.distance = (spectator.x - this.x) ** 2 + (spectator.y - this.y) ** 2 + (spectator.z - this.z) ** 2
-        let a = computeIntersection({x: this.x, y: this.y, z: this.z}, {x: spectator.x - this.x, y: spectator.y - this.y, z: spectator.z - this.z},
+        this.distance = (spectator.position.x - this.position.x) ** 2 + (spectator.position.y - this.position.y) ** 2 + (spectator.position.z - this.position.z) ** 2
+        let a = computeIntersection(this.position, {x: spectator.position.x - this.position.x, y: spectator.position.y - this.position.y, z: spectator.position.z - this.position.z},
             spectator.corvp, spectator.vecup, spectator.vecri)
         if(a[0] < 0 || a[0] > 1){this.status = 'invisible'}
         else{this.status = 'visible'}
@@ -255,10 +253,8 @@ class Point {
 }
 
 class Spectator {
-    constructor(x, y, z) {
-        this.x = x
-        this.y = y
-        this.z = z
+    constructor(position) {
+        this.position = position
         this.velocity = {x: 0, y: 0, z: 0}
         this.angleVelocity = {alpha: 0, beta: 0}
         this.alpha = 0
@@ -283,14 +279,14 @@ class Spectator {
         this.vecri.x = -Math.sin(this.beta)
         this.vecri.z = Math.cos(this.beta)
 
-        this.corvp.x = this.x + this.vecvp.x
-        this.corvp.y = this.y + this.vecvp.y
-        this.corvp.z = this.z + this.vecvp.z
+        this.corvp.x = this.position.x + this.vecvp.x
+        this.corvp.y = this.position.y + this.vecvp.y
+        this.corvp.z = this.position.z + this.vecvp.z
     }
     update() {
-        this.x += (this.velocity.x * Math.cos(this.beta) - this.velocity.z * Math.sin(this.beta))
-        this.z += (this.velocity.x * Math.sin(this.beta) + this.velocity.z * Math.cos(this.beta))
-        //this.y += this.velocity.y
+        this.position.x += (this.velocity.x * Math.cos(this.beta) - this.velocity.z * Math.sin(this.beta))
+        this.position.z += (this.velocity.x * Math.sin(this.beta) + this.velocity.z * Math.cos(this.beta))
+        //this.position.y += this.velocity.y
         if(this.alpha <= Math.PI / 2 && this.alpha >= - Math.PI / 2){
             this.alpha += this.angleVelocity.alpha * 2
         }
@@ -301,41 +297,63 @@ class Spectator {
 
         this.beta += this.angleVelocity.beta * 2
         this.calculatevp()
-        if(this.x > floor.x && this.x < floor.x + floor.height && this.z > floor.z && this.z < floor.z + floor.width && this.y > floor.y && this.y < floor.y + this.height && this.velocity.y <= 0){
+        if(isOnFloor()){
             this.velocity.y = 0
-            console.log(891247)
         }
         else{
-            console.log(123)
             this.velocity.y += this.gravity
-            this.y += this.velocity.y
+            this.position.y += this.velocity.y
         }
-        //this.y += this.velocity.y
-        if(this.y < -190){
-            this.x = -3
-            this.y = 6
-            this.z = 0
+        if(this.position.y < -190){
+            this.position.x = -3
+            this.position.y = 6
+            this.position.z = 0
             this.velocity.y = 0
         }
     }
 }
 
+function isOnFloor(){
+    return spectator.position.x > floor.position.x && spectator.position.x < floor.position.x + floor.height && spectator.position.z > floor.position.z && spectator.position.z < floor.position.z + floor.width && spectator.position.y > floor.position.y && spectator.position.y < floor.position.y + spectator.height && spectator.velocity.y <= 0
+}
 
 class Floor {
-    constructor(x, y, z, width, height){
-        this.x = x
-        this.y = y
-        this.z = z
+    constructor(position, width, height){
+        this.position = position
         this.width = width
         this.height = height
     }
 }
 
+class Interaction {
+    constructor(position, width, height, type){
+        this.position = position
+        this.width = width
+        this.height = height
+        this.type = type
+    }
+
+    action(){
+        switch (this.type){
+            case 'packman':
+                console.log('packman is pressed')
+                break
+            case 'battleship':
+                console.log('battleship is pressed')
+                break
+            case 'life':
+                console.log('life is pressed')
+                break   
+        }
+    }
+}
+
+
 
 let points = []
 let edges = []
 let faces = []
-const spectator = new Spectator(-3, 6, 0)
+const spectator = new Spectator(position = {x: -3, y: 6, z: 0})
 
 const platformwidth = 10
 const platformheight = 12
@@ -345,7 +363,7 @@ const brickheight = 4
 let platp = []
 for(let i = 0; i < platformheight; i++){
     for(let j = 0; j < platformwidth; j++){
-        platp.push({x: i * brickheight, y: 0, z: j * brickwidth})
+        platp.push(position = {x: i * brickheight, y: 0, z: j * brickwidth})
     }
 }
 let platf = []
@@ -368,9 +386,7 @@ for(let i = 1; i < platformheight - 1; i+=2){
     }
 }
 const platform = new Object(position = {x: -(platformheight - 1) * brickheight / 2, y: 0, z: -(platformwidth - 1) * brickwidth / 2}, platp, platf, 'maxpoint')
-let floor = new Floor(-(platformheight - 1) * brickheight / 2, 0, -(platformwidth - 1) * brickwidth / 2, platformwidth * brickwidth, platformheight * brickheight)
-
-
+let floor = new Floor(position = {x: -(platformheight - 1) * brickheight / 2, y: 0, z: -(platformwidth - 1) * brickwidth / 2}, platformwidth * brickwidth, platformheight * brickheight)
 
 
 const gridsize = 50
@@ -396,7 +412,18 @@ for(let i = 0; i < gridsize; i++){
 const wavecenter = {x: 0, y: -40, z: 0}
 const grid = new HollowObject(position = {x: -gridsize * widt / 2, y: -40, z: -gridsize * widt / 2}, gridp, gride)
 
-const gaem1 = new Object(position = {x: 10, y: 0, z: 0}, [
+stars = []
+const starscnt = 1000
+const sradius = 1000
+for(let i = 0; i < starscnt; i++){
+    let alpha = Math.random() * Math.PI
+    let beta = Math.random() * Math.PI * 2
+    stars.push(new HollowObject(position = {x: Math.cos(alpha) * Math.cos(beta) * sradius, y: Math.sin(alpha) * sradius, z: Math.cos(alpha) * Math.sin(beta) * sradius}, [{x: 0, y: 0, z: 0}, {x: 0, y: 5, z: 0}], [[0, 1]], 'maxpoint'))
+}
+
+
+
+const gaem1 = new Object(position = {x: 10, y: 0, z: -6}, [
     {x: 0, y: 0, z: 0},//0
     {x: 3, y: 0, z: 0},//1
     {x: 3, y: 0, z: 3},//2
@@ -446,7 +473,7 @@ const gaem1 = new Object(position = {x: 10, y: 0, z: 0}, [
     [1, 2, 14, 13],
     [0, 3, 7, 4],
     [4, 7, 11, 8],
-    [17, 16, 18, 19],
+    [17, 16, 18, 19],//<--screen
     [8, 11, 17, 16],
     [8, 12, 18, 16],
     [15, 11, 17, 19],
@@ -459,7 +486,16 @@ const gaem1 = new Object(position = {x: 10, y: 0, z: 0}, [
 
 ], 'maxpoint')
 
-const gaem2 = new Object(position = {x: 10, y: 0, z: -3}, [
+const screen1 = new Object(position = {x: 0, y: 0, z: 0}, [
+    {x: 11.2, y: 4.2, z: -5.8},
+    {x: 11.2, y: 5.8, z: -5.8},
+    {x: 11.2, y: 4.2, z: -3.2},
+    {x: 11.2, y: 5.8, z: -3.2}
+], [
+    [0, 1, 3, 2]
+], 'maxpoint')
+
+const gaem2 = new Object(position = {x: 10, y: 0, z: 0}, [
     {x: 0, y: 0, z: 0},//0
     {x: 3, y: 0, z: 0},//1
     {x: 3, y: 0, z: 3},//2
@@ -516,7 +552,16 @@ const gaem2 = new Object(position = {x: 10, y: 0, z: -3}, [
 
 ], 'maxpoint')
 
-const gaem3 = new Object(position = {x: 10, y: 0, z: 3}, [
+const screen2 = new Object(position = {x: 0, y: 0, z: 0}, [
+    {x: 11.2, y: 4.2, z: 0.2},
+    {x: 11.2, y: 5.8, z: 0.2},
+    {x: 11.2, y: 4.2, z: 2.8},
+    {x: 11.2, y: 5.8, z: 2.8}
+], [
+    [0, 1, 3, 2]
+], 'maxpoint')
+
+const gaem3 = new Object(position = {x: 10, y: 0, z: 6}, [
     {x: 0, y: 0, z: 0},//0
     {x: 3, y: 0, z: 0},//1
     {x: 3, y: 0, z: 3},//2
@@ -584,6 +629,37 @@ const gaem3 = new Object(position = {x: 10, y: 0, z: 3}, [
 
 ], 'maxpoint')
 
+const screen3 = new Object(position = {x: 0, y: 0, z: 0}, [
+    {x: 11.2, y: 4.2, z: 6.2},
+    {x: 11.2, y: 5.8, z: 6.2},
+    {x: 11.2, y: 4.2, z: 8.8},
+    {x: 11.2, y: 5.8, z: 8.8}
+], [
+    [0, 1, 3, 2]
+], 'maxpoint')
+
+/*
+let moonv = []
+let moone = []
+const n = 30
+const moonr = 300
+for(let i = 0; i < n; i++){
+    moonv.push({x: 0, y: moonr * Math.sin(Math.PI * 2 * i / n), z: moonr * Math.cos(Math.PI * 2 * i / n)})
+}
+for(let i = 0; i < n; i++){
+    moone.push([i, (i + 1) % n])
+}
+const moon = new HollowObject(position = {x: 1000, y: 500, z: 100}, moonv, moone)*/
+
+
+
+//var ae = new Audio('bassnbs.mp3')
+
+
+const intwidth = 3
+const gi1 = new Interaction(position = {x: gaem1.position.x - intwidth, z: gaem1.position.z}, intwidth, intwidth, 'packman')
+const gi2 = new Interaction(position = {x: gaem2.position.x - intwidth, z: gaem2.position.z}, intwidth, intwidth, 'battleship')
+const gi3 = new Interaction(position = {x: gaem3.position.x - intwidth, z: gaem3.position.z}, intwidth, intwidth, 'life')
 
 let particles = []
 
@@ -596,7 +672,7 @@ function animate() {
         pr.update()
     })
     grid.points.forEach(p => {
-        p.velocity.y = Math.sin((Date.now() / 1000) + (Math.abs(p.x) + Math.abs(p.z)) * Math.PI / 300) / 10
+        p.velocity.y = Math.sin((Date.now() / 1000) + (Math.abs(p.position.x) + Math.abs(p.position.z)) * Math.PI / 300) / 10
     })
     points.forEach(p => {
         p.update()
@@ -610,7 +686,6 @@ function animate() {
         f.update()
     })
     spectator.update()
-
 }
 animate()
 
@@ -666,6 +741,16 @@ addEventListener('keydown', ({key}) => {
         case 'j':
             spectator.angleVelocity.beta = -0.02
             break
+        case 'e':
+            if(spectator.position.x > gi1.position.x && spectator.position.x < gi1.position.x + gi1.height && spectator.position.z > gi1.position.z && spectator.position.z < gi1.position.z + gi1.width){
+                gi1.action()
+            }
+            else if(spectator.position.x > gi2.position.x && spectator.position.x < gi2.position.x + gi2.height && spectator.position.z > gi2.position.z && spectator.position.z < gi2.position.z + gi2.width){
+                gi2.action()
+            }
+            else if(spectator.position.x > gi3.position.x && spectator.position.x < gi3.position.x + gi3.height && spectator.position.z > gi3.position.z && spectator.position.z < gi3.position.z + gi3.width){
+                gi3.action()
+            }
     }
 })
 
@@ -705,7 +790,9 @@ addEventListener('keydown', ({key}) => {
             spectator.velocity.z = 0.2
             break
         case ' ':
-            spectator.velocity.y = 0.3
+            if(isOnFloor()){
+                spectator.velocity.y = 0.3
+            }
             break
         case 'l':
             spectator.angleVelocity.beta = 0.02
@@ -722,6 +809,17 @@ addEventListener('keydown', ({key}) => {
             break
         case 'j':
             spectator.angleVelocity.beta = -0.02
+            break
+        case 'e':
+            if(spectator.position.x > gi1.position.x && spectator.position.x < gi1.position.x + gi1.height && spectator.position.z > gi1.position.z && spectator.position.z < gi1.position.z + gi1.width){
+                gi1.action()
+            }
+            else if(spectator.position.x > gi2.position.x && spectator.position.x < gi2.position.x + gi2.height && spectator.position.z > gi2.position.z && spectator.position.z < gi2.position.z + gi2.width){
+                gi2.action()
+            }
+            else if(spectator.position.x > gi3.position.x && spectator.position.x < gi3.position.x + gi3.height && spectator.position.z > gi3.position.z && spectator.position.z < gi3.position.z + gi3.width){
+                gi3.action()
+            }
             break
     }
 })
@@ -740,5 +838,71 @@ addEventListener('keyup', ({key}) => {
         case 'i': case 'k':
             spectator.angleVelocity.alpha = 0
             break
+    }
+})
+
+function isOnQuad(pointX, pointY, px1, py1, px2, py2, px3, py3, px4, py4){
+    let ans = false
+
+    let vx = pointX - px1
+    let vy = pointY - py1
+    let vx2 = px2 - px1
+    let vy2 = py2 - py1
+    let vx3 = px3 - px1
+    let vy3 = py3 - py1
+    let alpha1, beta1, alpha2, beta2
+
+
+    alpha1 = (vx * vy3 - vx3 * vy) / (vx2 * vy3 - vx3 * vy2)
+    beta1 = (vx2 * vy - vx * vy2) / (vx2 * vy3 - vx3 * vy2)
+
+    vx = pointX - px2
+    vy = pointY - py2
+    vx2 *= -1
+    vy2 *= -1
+    vx3 = px3 - px2
+    vy3 = py3 - py2
+
+
+    alpha2 = (vx * vy3 - vx3 * vy) / (vx2 * vy3 - vx3 * vy2)
+    beta2 = (vx2 * vy - vx * vy2) / (vx2 * vy3 - vx3 * vy2)
+    
+    ans = ans || (alpha1 > 0 && alpha1 < 1 && beta1 > 0 && beta1 < 1 && alpha2 > 0 && alpha2 < 1 && beta2 > 0 && beta2 < 1)
+
+    vx = pointX - px4
+    vy = pointY - py4
+    vx2 = px2 - px4
+    vy2 = py2 - py4
+    vx3 = px3 - px4
+    vy3 = py3 - py4
+
+    alpha1 = (vx * vy3 - vx3 * vy) / (vx2 * vy3 - vx3 * vy2)
+    beta1 = (vx2 * vy - vx * vy2) / (vx2 * vy3 - vx3 * vy2)
+
+
+    vx = pointX - px3
+    vy = pointY - py3
+    vx2 = px2 - px3
+    vy2 = py2 - py3
+    vx3 = px4 - px3
+    vy3 = py4 - py3
+
+    alpha2 = (vx * vy3 - vx3 * vy) / (vx2 * vy3 - vx3 * vy2)
+    beta2 = (vx2 * vy - vx * vy2) / (vx2 * vy3 - vx3 * vy2)
+
+    ans = ans || (alpha1 > 0 && alpha1 < 1 && beta1 > 0 && beta1 < 1 && alpha2 > 0 && alpha2 < 1 && beta2 > 0 && beta2 < 1)
+
+    return ans
+}
+
+addEventListener('click', mouse =>{
+    if(isOnQuad(mouse.clientX, mouse.clientY, screen1.points[0].image.x, screen1.points[0].image.y, screen1.points[1].image.x, screen1.points[1].image.y, screen1.points[2].image.x, screen1.points[2].image.y, screen1.points[3].image.x, screen1.points[3].image.y)){
+        gi1.action()
+    }
+    else if(isOnQuad(mouse.clientX, mouse.clientY, screen2.points[0].image.x, screen2.points[0].image.y, screen2.points[1].image.x, screen2.points[1].image.y, screen2.points[2].image.x, screen2.points[2].image.y, screen2.points[3].image.x, screen2.points[3].image.y)){
+        gi2.action()
+    }
+    else if(isOnQuad(mouse.clientX, mouse.clientY, screen3.points[0].image.x, screen3.points[0].image.y, screen3.points[1].image.x, screen3.points[1].image.y, screen3.points[2].image.x, screen3.points[2].image.y, screen3.points[3].image.x, screen3.points[3].image.y)){
+        gi3.action()
     }
 })
